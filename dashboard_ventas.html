@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toyota Argentina — Ventas 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --red:    #CC0000;
+    --red-dk: #990000;
+    --ink:    #0F0F0F;
+    --smoke:  #F5F5F5;
+    --mist:   #E8E8E8;
+    --silver: #9A9A9A;
+    --white:  #FFFFFF;
+    --green:  #1A6E1A;
+    --amber:  #BF8000;
+    --z1: #1B4F8A; --z2: #2E86AB; --z3: #A23B72;
+    --z4: #F18F01; --z5: #CC0000; --z6: #3A7D44;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Arial Narrow', Arial, sans-serif;
+    background: var(--smoke);
+    color: var(--ink);
+    font-size: 13px;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--ink);
+    color: var(--white);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 3px solid var(--red);
+  }
+  header h1 { font-size: 15px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  header .badge { background: var(--red); color: var(--white); font-size: 10px; font-weight: 700;
+    padding: 3px 10px; letter-spacing: .12em; text-transform: uppercase; }
+
+  /* ── NAV TABS ── */
+  nav {
+    background: var(--white);
+    border-bottom: 1px solid var(--mist);
+    display: flex;
+    padding: 0 32px;
+    gap: 0;
+  }
+  nav button {
+    background: none; border: none; border-bottom: 3px solid transparent;
+    padding: 14px 20px; font-size: 12px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; cursor: pointer; color: var(--silver);
+    transition: color .15s, border-color .15s;
+  }
+  nav button.active { color: var(--red); border-bottom-color: var(--red); }
+  nav button:hover:not(.active) { color: var(--ink); }
+
+  /* ── MAIN ── */
+  main { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── KPI ROW ── */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .kpi {
+    background: var(--white);
+    border-top: 3px solid var(--mist);
+    padding: 14px 16px;
+    position: relative;
+    transition: border-color .15s;
+  }
+  .kpi.active-month { border-top-color: var(--red); }
+  .kpi-label { font-size: 10px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--silver); margin-bottom: 6px; }
+  .kpi-val { font-size: 26px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+  .kpi-sub { font-size: 11px; color: var(--silver); }
+  .kpi-var { font-size: 11px; font-weight: 700; margin-top: 4px; }
+  .up { color: var(--green); } .down { color: var(--red); } .flat { color: var(--silver); }
+
+  /* ── SECTION TITLE ── */
+  .section-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 16px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--mist);
+  }
+  .section-head h2 { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .section-head .note { font-size: 11px; color: var(--silver); }
+
+  /* ── GRID 2 COLS ── */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .full { grid-column: 1 / -1; }
+
+  /* ── CARD ── */
+  .card { background: var(--white); padding: 20px; }
+  .card-title { font-size: 11px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--silver); margin-bottom: 14px; }
+  .card canvas { width: 100% !important; }
+
+  /* ── TABLE ── */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead th {
+    background: var(--ink); color: var(--white);
+    padding: 8px 10px; text-align: center; font-size: 10px;
+    font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+    white-space: nowrap;
+  }
+  thead th:first-child { text-align: left; }
+  tbody tr:nth-child(even) { background: var(--smoke); }
+  tbody tr:hover { background: #FFF0F0; }
+  tbody td { padding: 7px 10px; border-bottom: 1px solid var(--mist); white-space: nowrap; }
+  tbody td:not(:first-child) { text-align: center; }
+  tbody td:first-child { font-weight: 700; }
+  tfoot td { padding: 8px 10px; font-weight: 700; background: var(--ink);
+    color: var(--white); text-align: center; }
+  tfoot td:first-child { text-align: left; }
+
+  .tag { display: inline-block; font-size: 9px; font-weight: 700; padding: 1px 6px;
+    letter-spacing: .08em; text-transform: uppercase; border-radius: 2px; margin-left: 4px; }
+
+  /* ── FILTERS ── */
+  .filters { display: flex; gap: 10px; margin-bottom: 18px; align-items: center; flex-wrap: wrap; }
+  .filters label { font-size: 10px; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--silver); margin-right: 4px; }
+  .filters select, .filters input {
+    border: 1px solid var(--mist); background: var(--white);
+    padding: 6px 10px; font-size: 12px; color: var(--ink);
+    appearance: none; cursor: pointer;
+  }
+  .filters select:focus { outline: 2px solid var(--red); }
+  .btn-group { display: flex; gap: 0; }
+  .btn-group button {
+    border: 1px solid var(--mist); background: var(--white);
+    padding: 6px 14px; font-size: 11px; font-weight: 700; letter-spacing: .05em;
+    cursor: pointer; color: var(--silver); transition: all .12s;
+  }
+  .btn-group button.active { background: var(--red); color: var(--white); border-color: var(--red); }
+  .btn-group button:first-child { border-right: none; }
+
+  /* ── VAR PILL ── */
+  .pill { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; }
+  .pill.up { background: #E8F5E8; color: var(--green); }
+  .pill.dn { background: #FDECEA; color: var(--red); }
+  .pill.nt { background: var(--mist); color: var(--silver); }
+
+  /* ── ZONA COLORS ── */
+  .z1 { color: var(--z1); } .z2 { color: var(--z2); }
+  .z3 { color: var(--z3); } .z4 { color: var(--z4); }
+  .z5 { color: var(--z5); } .z6 { color: var(--z6); }
+
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-right: 5px; vertical-align: middle; }
+
+  /* ── TREND SPARKLINE ROW ── */
+  .spark-row { display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; margin-bottom: 24px; }
+  .spark-card { background: var(--white); padding: 14px; }
+  .spark-label { font-size: 10px; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; margin-bottom: 6px; }
+  .spark-val { font-size: 20px; font-weight: 700; }
+  .spark-sub { font-size: 10px; color: var(--silver); margin-top: 2px; }
+
+  /* ── METRIC TOGGLE ── */
+  .metric-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .metric-row span { font-size: 11px; color: var(--silver); font-weight: 700;
+    letter-spacing: .05em; text-transform: uppercase; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--smoke); }
+  ::-webkit-scrollbar-thumb { background: var(--mist); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Toyota Argentina &mdash; Ventas 2026</h1>
+  <span class="badge">Ene &ndash; Jun · 23.913 Unidades</span>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab('resumen')">Resumen</button>
+  <button onclick="showTab('zonas')">Por Zona</button>
+  <button onclick="showTab('dealers')">Por Dealer</button>
+  <button onclick="showTab('modelos')">Por Modelo</button>
+  <button onclick="showTab('tendencia')">Tendencia Semanal</button>
+  <button onclick="showTab('regiones')">Por Región</button>
+</nav>
+
+<main>
+
+<!-- ══════════════ RESUMEN ══════════════ -->
+<section class="section active" id="resumen">
+
+  <div class="kpi-row" id="kpi-row"></div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Unidades por mes — Total país</div>
+      <canvas id="chart-mes" height="180"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Promedio diario por zona — Últimos 3 meses</div>
+      <canvas id="chart-zona-ult3" height="180"></canvas>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Mix de modelos — Junio 2026</div>
+      <canvas id="chart-mix-jun" height="200"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Variación prom/día mes a mes — Top 5 modelos</div>
+      <canvas id="chart-mod-tend" height="200"></canvas>
+    </div>
+  </div>
+
+</section>
+
+<!-- ══════════════ ZONAS ══════════════ -->
+<section class="section" id="zonas">
+
+  <div class="section-head">
+    <h2>Ventas por Zona</h2>
+    <span class="note">Unidades · Prom/día · Participación %</span>
+  </div>
+
+  <div class="grid2" style="margin-bottom:24px">
+    <div class="card">
+      <div class="card-title">Evolución mensual — Prom/día por zona</div>
+      <canvas id="chart-zona-evol" height="220"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Comparativo Abr→May→Jun — Prom/día</div>
+      <canvas id="chart-zona-comp" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Tabla — Ventas por Zona (Ene–Jun)</div>
+    <div class="metric-row">
+      <span>Mostrar:</span>
+      <div class="btn-group">
+        <button class="active" onclick="setZonaMet('und',this)">Unidades</button>
+        <button onclick="setZonaMet('prom',this)">Prom/día</button>
+        <button onclick="setZonaMet('pct',this)">Part. %</button>
+      </div>
+    </div>
+    <div class="tbl-wrap"><table id="tbl-zona"></table></div>
+  </div>
+
+</section>
+
+<!-- ══════════════ DEALERS ══════════════ -->
+<section class="section" id="dealers">
+
+  <div class="section-head">
+    <h2>Ventas por Dealer</h2>
+    <span class="note">Filtrar por zona o buscar dealer</span>
+  </div>
+
+  <div class="filters">
+    <div>
+      <label>Zona</label>
+      <select id="filt-zona" onchange="renderDealers()">
+        <option value="todas">Todas</option>
+        <option>Zona 1</option><option>Zona 2</option><option>Zona 3</option>
+        <option>Zona 4</option><option>Zona 5</option><option>Zona 6</option>
+      </select>
+    </div>
+    <div>
+      <label>Dealer</label>
+      <input id="filt-dealer" type="text" placeholder="Buscar..." oninput="renderDealers()" style="width:140px">
+    </div>
+    <div class="btn-group">
+      <button class="active" onclick="setDealerMet('und',this)">Unidades</button>
+      <button onclick="setDealerMet('prom',this)">Prom/día</button>
+      <button onclick="setDealerMet('pct',this)">Part. %</button>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table id="tbl-dealers"></table>
+  </div>
+
+</section>
+
+<!-- ══════════════ MODELOS ══════════════ -->
+<section class="section" id="modelos">
+
+  <div class="section-head">
+    <h2>Ventas por Modelo</h2>
+    <span class="note">Ene–Jun 2026 acumulado</span>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Evolución prom/día — Top 6 modelos</div>
+      <canvas id="chart-mod-evol" height="220"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Participación acumulada — Ene a Jun</div>
+      <canvas id="chart-mod-pie" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Tabla completa por modelo</div>
+    <div class="metric-row">
+      <span>Mostrar:</span>
+      <div class="btn-group">
+        <button class="active" onclick="setModMet('und',this)">Unidades</button>
+        <button onclick="setModMet('prom',this)">Prom/día</button>
+        <button onclick="setModMet('pct',this)">Part. %</button>
+      </div>
+    </div>
+    <div class="tbl-wrap"><table id="tbl-modelos"></table></div>
+  </div>
+
+</section>
+
+<!-- ══════════════ TENDENCIA ══════════════ -->
+<section class="section" id="tendencia">
+
+  <div class="section-head">
+    <h2>Tendencia Semanal</h2>
+    <span class="note">Semanas lunes a viernes · Solo días hábiles</span>
+  </div>
+
+  <div class="filters">
+    <div>
+      <label>Vista</label>
+      <select id="filt-tend" onchange="renderTendencia()">
+        <option value="total">Total país</option>
+        <option>Zona 1</option><option>Zona 2</option><option>Zona 3</option>
+        <option>Zona 4</option><option>Zona 5</option><option>Zona 6</option>
+        <option value="todas-zonas">Todas las zonas</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-title" id="tend-title">Unidades por semana — Total país</div>
+    <canvas id="chart-tend" height="200"></canvas>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Tabla — Boletaje por zona por semana</div>
+    <div class="tbl-wrap"><table id="tbl-tend"></table></div>
+  </div>
+
+</section>
+
+<!-- ══════════════ REGIONES ══════════════ -->
+<section class="section" id="regiones">
+
+  <div class="section-head">
+    <h2>Ventas por Región</h2>
+    <span class="note">AMBA · Buenos Aires · Litoral · Centro · NEA · NOA · Cuyo · Sur</span>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Evolución mensual — Prom/día por región</div>
+      <canvas id="chart-reg-evol" height="220"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title">Comparativo Abr→May→Jun — Prom/día</div>
+      <canvas id="chart-reg-comp" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-title">Tabla — Ventas por Región (Ene–Jun)</div>
+    <div class="metric-row">
+      <span>Mostrar:</span>
+      <div class="btn-group">
+        <button class="active" onclick="setRegMet('und',this)">Unidades</button>
+        <button onclick="setRegMet('prom',this)">Prom/día</button>
+        <button onclick="setRegMet('pct',this)">Part. %</button>
+      </div>
+    </div>
+    <div class="tbl-wrap"><table id="tbl-region"></table></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Dealers por Región — Detalle de Junio</div>
+    <div class="filters">
+      <div>
+        <label>Región</label>
+        <select id="filt-reg" onchange="renderRegDealers()">
+          <option value="todas">Todas</option>
+          <option>AMBA</option><option>BUENOS AIRES</option><option>LITORAL</option>
+          <option>CENTRO</option><option>NEA</option><option>NOA</option>
+          <option>CUYO</option><option>SUR</option>
+        </select>
+      </div>
+    </div>
+    <div class="tbl-wrap"><table id="tbl-reg-dealers"></table></div>
+  </div>
+
+</section>
+
+</main>
+
+<script>
+const D = {"kpis": [{"mes": "Ene", "und": 4235, "prom": 201.7, "var": 0}, {"mes": "Feb", "und": 3796, "prom": 210.9, "var": 4.6}, {"mes": "Mar", "und": 4719, "prom": 224.7, "var": 6.5}, {"mes": "Abr", "und": 3866, "prom": 193.3, "var": -14.0}, {"mes": "May", "und": 3366, "prom": 177.2, "var": -8.3}, {"mes": "Jun", "und": 3931, "prom": 187.2, "var": 5.7}], "meses": ["Ene", "Feb", "Mar", "Abr", "May", "Jun"], "total_anual": 23913, "ventas_mes": [4235, 3796, 4719, 3866, 3366, 3931], "zona_mes": {"Zona 1": {"Ene": {"und": 699, "prom": 33.3, "pct": 16.5}, "Feb": {"und": 624, "prom": 34.7, "pct": 16.4}, "Mar": {"und": 768, "prom": 36.6, "pct": 16.3}, "Abr": {"und": 697, "prom": 34.9, "pct": 18.0}, "May": {"und": 536, "prom": 28.2, "pct": 15.9}, "Jun": {"und": 619, "prom": 29.5, "pct": 15.7}}, "Zona 2": {"Ene": {"und": 830, "prom": 39.5, "pct": 19.6}, "Feb": {"und": 754, "prom": 41.9, "pct": 19.9}, "Mar": {"und": 812, "prom": 38.7, "pct": 17.2}, "Abr": {"und": 692, "prom": 34.6, "pct": 17.9}, "May": {"und": 569, "prom": 29.9, "pct": 16.9}, "Jun": {"und": 733, "prom": 34.9, "pct": 18.6}}, "Zona 3": {"Ene": {"und": 708, "prom": 33.7, "pct": 16.7}, "Feb": {"und": 582, "prom": 32.3, "pct": 15.3}, "Mar": {"und": 793, "prom": 37.8, "pct": 16.8}, "Abr": {"und": 619, "prom": 30.9, "pct": 16.0}, "May": {"und": 578, "prom": 30.4, "pct": 17.2}, "Jun": {"und": 627, "prom": 29.9, "pct": 16.0}}, "Zona 4": {"Ene": {"und": 688, "prom": 32.8, "pct": 16.2}, "Feb": {"und": 548, "prom": 30.4, "pct": 14.4}, "Mar": {"und": 797, "prom": 38.0, "pct": 16.9}, "Abr": {"und": 611, "prom": 30.6, "pct": 15.8}, "May": {"und": 511, "prom": 26.9, "pct": 15.2}, "Jun": {"und": 666, "prom": 31.7, "pct": 16.9}}, "Zona 5": {"Ene": {"und": 925, "prom": 44.0, "pct": 21.8}, "Feb": {"und": 938, "prom": 52.1, "pct": 24.7}, "Mar": {"und": 1060, "prom": 50.5, "pct": 22.5}, "Abr": {"und": 878, "prom": 43.9, "pct": 22.7}, "May": {"und": 840, "prom": 44.2, "pct": 25.0}, "Jun": {"und": 931, "prom": 44.3, "pct": 23.7}}, "Zona 6": {"Ene": {"und": 385, "prom": 18.3, "pct": 9.1}, "Feb": {"und": 350, "prom": 19.4, "pct": 9.2}, "Mar": {"und": 489, "prom": 23.3, "pct": 10.4}, "Abr": {"und": 369, "prom": 18.4, "pct": 9.5}, "May": {"und": 332, "prom": 17.5, "pct": 9.9}, "Jun": {"und": 355, "prom": 16.9, "pct": 9.0}}}, "dealers": {"ADS": {"zona": "Zona 3", "meses": {"Ene": {"und": 66, "prom": 3.1, "pct": 1.6}, "Feb": {"und": 76, "prom": 4.2, "pct": 2.0}, "Mar": {"und": 99, "prom": 4.7, "pct": 2.1}, "Abr": {"und": 71, "prom": 3.5, "pct": 1.8}, "May": {"und": 56, "prom": 2.9, "pct": 1.7}, "Jun": {"und": 60, "prom": 2.9, "pct": 1.5}}}, "AGO": {"zona": "Zona 6", "meses": {"Ene": {"und": 143, "prom": 6.8, "pct": 3.4}, "Feb": {"und": 140, "prom": 7.8, "pct": 3.7}, "Mar": {"und": 149, "prom": 7.1, "pct": 3.2}, "Abr": {"und": 132, "prom": 6.6, "pct": 3.4}, "May": {"und": 143, "prom": 7.5, "pct": 4.2}, "Jun": {"und": 148, "prom": 7.0, "pct": 3.8}}}, "ALM": {"zona": "Zona 3", "meses": {"Ene": {"und": 95, "prom": 4.5, "pct": 2.2}, "Feb": {"und": 73, "prom": 4.1, "pct": 1.9}, "Mar": {"und": 110, "prom": 5.2, "pct": 2.3}, "Abr": {"und": 79, "prom": 4.0, "pct": 2.0}, "May": {"und": 81, "prom": 4.3, "pct": 2.4}, "Jun": {"und": 83, "prom": 4.0, "pct": 2.1}}}, "AMN": {"zona": "Zona 2", "meses": {"Ene": {"und": 144, "prom": 6.9, "pct": 3.4}, "Feb": {"und": 206, "prom": 11.4, "pct": 5.4}, "Mar": {"und": 190, "prom": 9.0, "pct": 4.0}, "Abr": {"und": 155, "prom": 7.8, "pct": 4.0}, "May": {"und": 148, "prom": 7.8, "pct": 4.4}, "Jun": {"und": 203, "prom": 9.7, "pct": 5.2}}}, "ANZ": {"zona": "Zona 6", "meses": {"Ene": {"und": 62, "prom": 3.0, "pct": 1.5}, "Feb": {"und": 35, "prom": 1.9, "pct": 0.9}, "Mar": {"und": 78, "prom": 3.7, "pct": 1.7}, "Abr": {"und": 42, "prom": 2.1, "pct": 1.1}, "May": {"und": 31, "prom": 1.6, "pct": 0.9}, "Jun": {"und": 38, "prom": 1.8, "pct": 1.0}}}, "ASI": {"zona": "Zona 2", "meses": {"Ene": {"und": 61, "prom": 2.9, "pct": 1.4}, "Feb": {"und": 83, "prom": 4.6, "pct": 2.2}, "Mar": {"und": 80, "prom": 3.8, "pct": 1.7}, "Abr": {"und": 68, "prom": 3.4, "pct": 1.8}, "May": {"und": 50, "prom": 2.6, "pct": 1.5}, "Jun": {"und": 48, "prom": 2.3, "pct": 1.2}}}, "ATN": {"zona": "Zona 2", "meses": {"Ene": {"und": 190, "prom": 9.0, "pct": 4.5}, "Feb": {"und": 80, "prom": 4.4, "pct": 2.1}, "Mar": {"und": 77, "prom": 3.7, "pct": 1.6}, "Abr": {"und": 63, "prom": 3.1, "pct": 1.6}, "May": {"und": 49, "prom": 2.6, "pct": 1.5}, "Jun": {"und": 100, "prom": 4.8, "pct": 2.5}}}, "BHA": {"zona": "Zona 3", "meses": {"Ene": {"und": 115, "prom": 5.5, "pct": 2.7}, "Feb": {"und": 123, "prom": 6.8, "pct": 3.2}, "Mar": {"und": 127, "prom": 6.0, "pct": 2.7}, "Abr": {"und": 118, "prom": 5.9, "pct": 3.1}, "May": {"und": 91, "prom": 4.8, "pct": 2.7}, "Jun": {"und": 124, "prom": 5.9, "pct": 3.2}}}, "BOS": {"zona": "Zona 3", "meses": {"Ene": {"und": 25, "prom": 1.2, "pct": 0.6}, "Feb": {"und": 11, "prom": 0.6, "pct": 0.3}, "Mar": {"und": 22, "prom": 1.0, "pct": 0.5}, "Abr": {"und": 19, "prom": 0.9, "pct": 0.5}, "May": {"und": 15, "prom": 0.8, "pct": 0.4}, "Jun": {"und": 15, "prom": 0.7, "pct": 0.4}}}, "CAM": {"zona": "Zona 4", "meses": {"Ene": {"und": 27, "prom": 1.3, "pct": 0.6}, "Feb": {"und": 23, "prom": 1.3, "pct": 0.6}, "Mar": {"und": 38, "prom": 1.8, "pct": 0.8}, "Abr": {"und": 27, "prom": 1.4, "pct": 0.7}, "May": {"und": 19, "prom": 1.0, "pct": 0.6}, "Jun": {"und": 26, "prom": 1.2, "pct": 0.7}}}, "CEC": {"zona": "Zona 6", "meses": {"Ene": {"und": 26, "prom": 1.2, "pct": 0.6}, "Feb": {"und": 31, "prom": 1.7, "pct": 0.8}, "Mar": {"und": 37, "prom": 1.8, "pct": 0.8}, "Abr": {"und": 19, "prom": 0.9, "pct": 0.5}, "May": {"und": 28, "prom": 1.5, "pct": 0.8}, "Jun": {"und": 23, "prom": 1.1, "pct": 0.6}}}, "CEL": {"zona": "Zona 6", "meses": {"Ene": {"und": 35, "prom": 1.7, "pct": 0.8}, "Feb": {"und": 39, "prom": 2.2, "pct": 1.0}, "Mar": {"und": 49, "prom": 2.3, "pct": 1.0}, "Abr": {"und": 45, "prom": 2.2, "pct": 1.2}, "May": {"und": 35, "prom": 1.8, "pct": 1.0}, "Jun": {"und": 35, "prom": 1.7, "pct": 0.9}}}, "CEM": {"zona": "Zona 5", "meses": {"Ene": {"und": 184, "prom": 8.8, "pct": 4.3}, "Feb": {"und": 167, "prom": 9.3, "pct": 4.4}, "Mar": {"und": 196, "prom": 9.3, "pct": 4.2}, "Abr": {"und": 141, "prom": 7.0, "pct": 3.6}, "May": {"und": 111, "prom": 5.8, "pct": 3.3}, "Jun": {"und": 188, "prom": 9.0, "pct": 4.8}}}, "DEC": {"zona": "Zona 4", "meses": {"Ene": {"und": 96, "prom": 4.6, "pct": 2.3}, "Feb": {"und": 82, "prom": 4.6, "pct": 2.2}, "Mar": {"und": 86, "prom": 4.1, "pct": 1.8}, "Abr": {"und": 68, "prom": 3.4, "pct": 1.8}, "May": {"und": 44, "prom": 2.3, "pct": 1.3}, "Jun": {"und": 64, "prom": 3.0, "pct": 1.6}}}, "DPQ": {"zona": "Zona 3", "meses": {"Ene": {"und": 31, "prom": 1.5, "pct": 0.7}, "Feb": {"und": 19, "prom": 1.1, "pct": 0.5}, "Mar": {"und": 31, "prom": 1.5, "pct": 0.7}, "Abr": {"und": 29, "prom": 1.4, "pct": 0.8}, "May": {"und": 20, "prom": 1.1, "pct": 0.6}, "Jun": {"und": 26, "prom": 1.2, "pct": 0.7}}}, "DYV": {"zona": "Zona 4", "meses": {"Ene": {"und": 136, "prom": 6.5, "pct": 3.2}, "Feb": {"und": 91, "prom": 5.1, "pct": 2.4}, "Mar": {"und": 178, "prom": 8.5, "pct": 3.8}, "Abr": {"und": 105, "prom": 5.2, "pct": 2.7}, "May": {"und": 113, "prom": 5.9, "pct": 3.4}, "Jun": {"und": 134, "prom": 6.4, "pct": 3.4}}}, "FED": {"zona": "Zona 3", "meses": {"Ene": {"und": 101, "prom": 4.8, "pct": 2.4}, "Feb": {"und": 70, "prom": 3.9, "pct": 1.8}, "Mar": {"und": 91, "prom": 4.3, "pct": 1.9}, "Abr": {"und": 57, "prom": 2.9, "pct": 1.5}, "May": {"und": 38, "prom": 2.0, "pct": 1.1}, "Jun": {"und": 39, "prom": 1.9, "pct": 1.0}}}, "FEP": {"zona": "Zona 5", "meses": {"Ene": {"und": 60, "prom": 2.9, "pct": 1.4}, "Feb": {"und": 64, "prom": 3.6, "pct": 1.7}, "Mar": {"und": 127, "prom": 6.0, "pct": 2.7}, "Abr": {"und": 85, "prom": 4.2, "pct": 2.2}, "May": {"und": 99, "prom": 5.2, "pct": 2.9}, "Jun": {"und": 113, "prom": 5.4, "pct": 2.9}}}, "GIN": {"zona": "Zona 2", "meses": {"Ene": {"und": 168, "prom": 8.0, "pct": 4.0}, "Feb": {"und": 170, "prom": 9.4, "pct": 4.5}, "Mar": {"und": 170, "prom": 8.1, "pct": 3.6}, "Abr": {"und": 181, "prom": 9.1, "pct": 4.7}, "May": {"und": 122, "prom": 6.4, "pct": 3.6}, "Jun": {"und": 159, "prom": 7.6, "pct": 4.0}}}, "GON": {"zona": "Zona 1", "meses": {"Ene": {"und": 55, "prom": 2.6, "pct": 1.3}, "Feb": {"und": 38, "prom": 2.1, "pct": 1.0}, "Mar": {"und": 36, "prom": 1.7, "pct": 0.8}, "Abr": {"und": 39, "prom": 1.9, "pct": 1.0}, "May": {"und": 17, "prom": 0.9, "pct": 0.5}, "Jun": {"und": 38, "prom": 1.8, "pct": 1.0}}}, "HAI": {"zona": "Zona 2", "meses": {"Ene": {"und": 115, "prom": 5.5, "pct": 2.7}, "Feb": {"und": 67, "prom": 3.7, "pct": 1.8}, "Mar": {"und": 129, "prom": 6.1, "pct": 2.7}, "Abr": {"und": 100, "prom": 5.0, "pct": 2.6}, "May": {"und": 90, "prom": 4.7, "pct": 2.7}, "Jun": {"und": 88, "prom": 4.2, "pct": 2.2}}}, "HOM": {"zona": "Zona 4", "meses": {"Ene": {"und": 45, "prom": 2.1, "pct": 1.1}, "Feb": {"und": 45, "prom": 2.5, "pct": 1.2}, "Mar": {"und": 47, "prom": 2.2, "pct": 1.0}, "Abr": {"und": 33, "prom": 1.6, "pct": 0.9}, "May": {"und": 44, "prom": 2.3, "pct": 1.3}, "Jun": {"und": 48, "prom": 2.3, "pct": 1.2}}}, "KAI": {"zona": "Zona 1", "meses": {"Ene": {"und": 185, "prom": 8.8, "pct": 4.4}, "Feb": {"und": 226, "prom": 12.6, "pct": 6.0}, "Mar": {"und": 255, "prom": 12.1, "pct": 5.4}, "Abr": {"und": 155, "prom": 7.8, "pct": 4.0}, "May": {"und": 144, "prom": 7.6, "pct": 4.3}, "Jun": {"und": 120, "prom": 5.7, "pct": 3.1}}}, "LUP": {"zona": "Zona 5", "meses": {"Ene": {"und": 103, "prom": 4.9, "pct": 2.4}, "Feb": {"und": 77, "prom": 4.3, "pct": 2.0}, "Mar": {"und": 91, "prom": 4.3, "pct": 1.9}, "Abr": {"und": 87, "prom": 4.3, "pct": 2.3}, "May": {"und": 62, "prom": 3.3, "pct": 1.8}, "Jun": {"und": 76, "prom": 3.6, "pct": 1.9}}}, "LUX": {"zona": "Zona 1", "meses": {"Ene": {"und": 152, "prom": 7.2, "pct": 3.6}, "Feb": {"und": 86, "prom": 4.8, "pct": 2.3}, "Mar": {"und": 138, "prom": 6.6, "pct": 2.9}, "Abr": {"und": 144, "prom": 7.2, "pct": 3.7}, "May": {"und": 104, "prom": 5.5, "pct": 3.1}, "Jun": {"und": 141, "prom": 6.7, "pct": 3.6}}}, "MEN": {"zona": "Zona 1", "meses": {"Ene": {"und": 49, "prom": 2.3, "pct": 1.2}, "Feb": {"und": 38, "prom": 2.1, "pct": 1.0}, "Mar": {"und": 48, "prom": 2.3, "pct": 1.0}, "Abr": {"und": 61, "prom": 3.0, "pct": 1.6}, "May": {"und": 42, "prom": 2.2, "pct": 1.2}, "Jun": {"und": 59, "prom": 2.8, "pct": 1.5}}}, "MIL": {"zona": "Zona 4", "meses": {"Ene": {"und": 53, "prom": 2.5, "pct": 1.3}, "Feb": {"und": 25, "prom": 1.4, "pct": 0.7}, "Mar": {"und": 48, "prom": 2.3, "pct": 1.0}, "Abr": {"und": 40, "prom": 2.0, "pct": 1.0}, "May": {"und": 44, "prom": 2.3, "pct": 1.3}, "Jun": {"und": 48, "prom": 2.3, "pct": 1.2}}}, "MOV": {"zona": "Zona 5", "meses": {"Ene": {"und": 91, "prom": 4.3, "pct": 2.1}, "Feb": {"und": 61, "prom": 3.4, "pct": 1.6}, "Mar": {"und": 65, "prom": 3.1, "pct": 1.4}, "Abr": {"und": 47, "prom": 2.4, "pct": 1.2}, "May": {"und": 50, "prom": 2.6, "pct": 1.5}, "Jun": {"und": 49, "prom": 2.3, "pct": 1.2}}}, "NIC": {"zona": "Zona 5", "meses": {"Ene": {"und": 308, "prom": 14.7, "pct": 7.3}, "Feb": {"und": 328, "prom": 18.2, "pct": 8.6}, "Mar": {"und": 386, "prom": 18.4, "pct": 8.2}, "Abr": {"und": 361, "prom": 18.1, "pct": 9.3}, "May": {"und": 331, "prom": 17.4, "pct": 9.8}, "Jun": {"und": 324, "prom": 15.4, "pct": 8.2}}}, "NUA": {"zona": "Zona 3", "meses": {"Ene": {"und": 73, "prom": 3.5, "pct": 1.7}, "Feb": {"und": 78, "prom": 4.3, "pct": 2.1}, "Mar": {"und": 108, "prom": 5.1, "pct": 2.3}, "Abr": {"und": 105, "prom": 5.2, "pct": 2.7}, "May": {"und": 147, "prom": 7.7, "pct": 4.4}, "Jun": {"und": 114, "prom": 5.4, "pct": 2.9}}}, "OLV": {"zona": "Zona 1", "meses": {"Ene": {"und": 64, "prom": 3.0, "pct": 1.5}, "Feb": {"und": 63, "prom": 3.5, "pct": 1.7}, "Mar": {"und": 77, "prom": 3.7, "pct": 1.6}, "Abr": {"und": 83, "prom": 4.2, "pct": 2.1}, "May": {"und": 58, "prom": 3.1, "pct": 1.7}, "Jun": {"und": 71, "prom": 3.4, "pct": 1.8}}}, "PIC": {"zona": "Zona 1", "meses": {"Ene": {"und": 37, "prom": 1.8, "pct": 0.9}, "Feb": {"und": 40, "prom": 2.2, "pct": 1.1}, "Mar": {"und": 60, "prom": 2.9, "pct": 1.3}, "Abr": {"und": 42, "prom": 2.1, "pct": 1.1}, "May": {"und": 35, "prom": 1.8, "pct": 1.0}, "Jun": {"und": 41, "prom": 2.0, "pct": 1.0}}}, "PRN": {"zona": "Zona 4", "meses": {"Ene": {"und": 92, "prom": 4.4, "pct": 2.2}, "Feb": {"und": 109, "prom": 6.1, "pct": 2.9}, "Mar": {"und": 139, "prom": 6.6, "pct": 2.9}, "Abr": {"und": 118, "prom": 5.9, "pct": 3.1}, "May": {"und": 85, "prom": 4.5, "pct": 2.5}, "Jun": {"und": 91, "prom": 4.3, "pct": 2.3}}}, "RIC": {"zona": "Zona 4", "meses": {"Ene": {"und": 113, "prom": 5.4, "pct": 2.7}, "Feb": {"und": 72, "prom": 4.0, "pct": 1.9}, "Mar": {"und": 115, "prom": 5.5, "pct": 2.4}, "Abr": {"und": 108, "prom": 5.4, "pct": 2.8}, "May": {"und": 78, "prom": 4.1, "pct": 2.3}, "Jun": {"und": 120, "prom": 5.7, "pct": 3.1}}}, "SAA": {"zona": "Zona 5", "meses": {"Ene": {"und": 58, "prom": 2.8, "pct": 1.4}, "Feb": {"und": 95, "prom": 5.3, "pct": 2.5}, "Mar": {"und": 104, "prom": 5.0, "pct": 2.2}, "Abr": {"und": 58, "prom": 2.9, "pct": 1.5}, "May": {"und": 62, "prom": 3.3, "pct": 1.8}, "Jun": {"und": 79, "prom": 3.8, "pct": 2.0}}}, "SAK": {"zona": "Zona 2", "meses": {"Ene": {"und": 85, "prom": 4.0, "pct": 2.0}, "Feb": {"und": 104, "prom": 5.8, "pct": 2.7}, "Mar": {"und": 113, "prom": 5.4, "pct": 2.4}, "Abr": {"und": 97, "prom": 4.8, "pct": 2.5}, "May": {"und": 70, "prom": 3.7, "pct": 2.1}, "Jun": {"und": 80, "prom": 3.8, "pct": 2.0}}}, "SEN": {"zona": "Zona 1", "meses": {"Ene": {"und": 37, "prom": 1.8, "pct": 0.9}, "Feb": {"und": 29, "prom": 1.6, "pct": 0.8}, "Mar": {"und": 27, "prom": 1.3, "pct": 0.6}, "Abr": {"und": 45, "prom": 2.2, "pct": 1.2}, "May": {"und": 34, "prom": 1.8, "pct": 1.0}, "Jun": {"und": 23, "prom": 1.1, "pct": 0.6}}}, "TMS": {"zona": "Zona 2", "meses": {"Ene": {"und": 67, "prom": 3.2, "pct": 1.6}, "Feb": {"und": 44, "prom": 2.4, "pct": 1.2}, "Mar": {"und": 53, "prom": 2.5, "pct": 1.1}, "Abr": {"und": 28, "prom": 1.4, "pct": 0.7}, "May": {"und": 40, "prom": 2.1, "pct": 1.2}, "Jun": {"und": 55, "prom": 2.6, "pct": 1.4}}}, "TRI": {"zona": "Zona 4", "meses": {"Ene": {"und": 126, "prom": 6.0, "pct": 3.0}, "Feb": {"und": 101, "prom": 5.6, "pct": 2.7}, "Mar": {"und": 146, "prom": 7.0, "pct": 3.1}, "Abr": {"und": 112, "prom": 5.6, "pct": 2.9}, "May": {"und": 84, "prom": 4.4, "pct": 2.5}, "Jun": {"und": 135, "prom": 6.4, "pct": 3.4}}}, "TSU": {"zona": "Zona 5", "meses": {"Ene": {"und": 121, "prom": 5.8, "pct": 2.9}, "Feb": {"und": 146, "prom": 8.1, "pct": 3.8}, "Mar": {"und": 91, "prom": 4.3, "pct": 1.9}, "Abr": {"und": 99, "prom": 5.0, "pct": 2.6}, "May": {"und": 125, "prom": 6.6, "pct": 3.7}, "Jun": {"und": 102, "prom": 4.9, "pct": 2.6}}}, "TTC": {"zona": "Zona 6", "meses": {"Ene": {"und": 53, "prom": 2.5, "pct": 1.3}, "Feb": {"und": 55, "prom": 3.1, "pct": 1.4}, "Mar": {"und": 76, "prom": 3.6, "pct": 1.6}, "Abr": {"und": 64, "prom": 3.2, "pct": 1.7}, "May": {"und": 56, "prom": 2.9, "pct": 1.7}, "Jun": {"und": 41, "prom": 2.0, "pct": 1.0}}}, "UZC": {"zona": "Zona 6", "meses": {"Ene": {"und": 66, "prom": 3.1, "pct": 1.6}, "Feb": {"und": 50, "prom": 2.8, "pct": 1.3}, "Mar": {"und": 100, "prom": 4.8, "pct": 2.1}, "Abr": {"und": 67, "prom": 3.4, "pct": 1.7}, "May": {"und": 39, "prom": 2.1, "pct": 1.2}, "Jun": {"und": 70, "prom": 3.3, "pct": 1.8}}}, "YAC": {"zona": "Zona 1", "meses": {"Ene": {"und": 120, "prom": 5.7, "pct": 2.8}, "Feb": {"und": 104, "prom": 5.8, "pct": 2.7}, "Mar": {"und": 127, "prom": 6.0, "pct": 2.7}, "Abr": {"und": 128, "prom": 6.4, "pct": 3.3}, "May": {"und": 102, "prom": 5.4, "pct": 3.0}, "Jun": {"und": 126, "prom": 6.0, "pct": 3.2}}}, "ZEN": {"zona": "Zona 3", "meses": {"Ene": {"und": 202, "prom": 9.6, "pct": 4.8}, "Feb": {"und": 132, "prom": 7.3, "pct": 3.5}, "Mar": {"und": 205, "prom": 9.8, "pct": 4.3}, "Abr": {"und": 141, "prom": 7.0, "pct": 3.6}, "May": {"und": 130, "prom": 6.8, "pct": 3.9}, "Jun": {"und": 166, "prom": 7.9, "pct": 4.2}}}}, "zonas": ["Zona 1", "Zona 2", "Zona 3", "Zona 4", "Zona 5", "Zona 6"], "modelos": {"Hilux": {"Ene": {"und": 2066, "prom": 98.4, "pct": 48.8}, "Feb": {"und": 1411, "prom": 78.4, "pct": 37.2}, "Mar": {"und": 1879, "prom": 89.5, "pct": 39.8}, "Abr": {"und": 1649, "prom": 82.5, "pct": 42.7}, "May": {"und": 1425, "prom": 75.0, "pct": 42.3}, "Jun": {"und": 1617, "prom": 77.0, "pct": 41.1}}, "Yaris Cross": {"Ene": {"und": 68, "prom": 3.2, "pct": 1.6}, "Feb": {"und": 1006, "prom": 55.9, "pct": 26.5}, "Mar": {"und": 1172, "prom": 55.8, "pct": 24.8}, "Abr": {"und": 738, "prom": 36.9, "pct": 19.1}, "May": {"und": 597, "prom": 31.4, "pct": 17.7}, "Jun": {"und": 757, "prom": 36.0, "pct": 19.3}}, "Corolla Cross": {"Ene": {"und": 597, "prom": 28.4, "pct": 14.1}, "Feb": {"und": 425, "prom": 23.6, "pct": 11.2}, "Mar": {"und": 556, "prom": 26.5, "pct": 11.8}, "Abr": {"und": 529, "prom": 26.4, "pct": 13.7}, "May": {"und": 406, "prom": 21.4, "pct": 12.1}, "Jun": {"und": 504, "prom": 24.0, "pct": 12.8}}, "Yaris": {"Ene": {"und": 613, "prom": 29.2, "pct": 14.5}, "Feb": {"und": 289, "prom": 16.1, "pct": 7.6}, "Mar": {"und": 348, "prom": 16.6, "pct": 7.4}, "Abr": {"und": 276, "prom": 13.8, "pct": 7.1}, "May": {"und": 315, "prom": 16.6, "pct": 9.4}, "Jun": {"und": 346, "prom": 16.5, "pct": 8.8}}, "SW4": {"Ene": {"und": 428, "prom": 20.4, "pct": 10.1}, "Feb": {"und": 318, "prom": 17.7, "pct": 8.4}, "Mar": {"und": 352, "prom": 16.8, "pct": 7.5}, "Abr": {"und": 309, "prom": 15.4, "pct": 8.0}, "May": {"und": 282, "prom": 14.8, "pct": 8.4}, "Jun": {"und": 267, "prom": 12.7, "pct": 6.8}}, "Corolla": {"Ene": {"und": 312, "prom": 14.9, "pct": 7.4}, "Feb": {"und": 218, "prom": 12.1, "pct": 5.7}, "Mar": {"und": 243, "prom": 11.6, "pct": 5.1}, "Abr": {"und": 206, "prom": 10.3, "pct": 5.3}, "May": {"und": 204, "prom": 10.7, "pct": 6.1}, "Jun": {"und": 183, "prom": 8.7, "pct": 4.7}}, "Rav 4": {"Ene": {"und": 54, "prom": 2.6, "pct": 1.3}, "Feb": {"und": 53, "prom": 2.9, "pct": 1.4}, "Mar": {"und": 73, "prom": 3.5, "pct": 1.5}, "Abr": {"und": 66, "prom": 3.3, "pct": 1.7}, "May": {"und": 47, "prom": 2.5, "pct": 1.4}, "Jun": {"und": 173, "prom": 8.2, "pct": 4.4}}, "Hiace": {"Ene": {"und": 76, "prom": 3.6, "pct": 1.8}, "Feb": {"und": 58, "prom": 3.2, "pct": 1.5}, "Mar": {"und": 73, "prom": 3.5, "pct": 1.5}, "Abr": {"und": 72, "prom": 3.6, "pct": 1.9}, "May": {"und": 75, "prom": 3.9, "pct": 2.2}, "Jun": {"und": 70, "prom": 3.3, "pct": 1.8}}}, "modelos_list": ["Hilux", "Yaris Cross", "Corolla Cross", "Yaris", "SW4", "Corolla", "Rav 4", "Hiace"], "semanas": ["05/01", "12/01", "19/01", "26/01", "02/02", "09/02", "16/02", "23/02", "02/03", "09/03", "16/03", "23/03", "30/03", "06/04", "13/04", "20/04", "27/04", "04/05", "11/05", "18/05", "25/05", "01/06", "08/06", "15/06", "22/06", "29/06"], "semanas_total": [978, 1033, 1066, 1017, 986, 1276, 545, 989, 1050, 1099, 1123, 925, 720, 965, 950, 936, 817, 850, 946, 782, 788, 780, 982, 740, 1002, 427], "semanas_zona": {"Zona 1": [181, 197, 143, 163, 153, 227, 71, 173, 164, 176, 190, 151, 127, 169, 160, 181, 147, 139, 153, 114, 130, 141, 154, 121, 153, 50], "Zona 2": [199, 205, 193, 219, 187, 294, 99, 174, 175, 215, 193, 150, 119, 172, 163, 171, 146, 146, 160, 133, 130, 131, 183, 132, 201, 86], "Zona 3": [166, 155, 196, 183, 161, 166, 100, 155, 165, 199, 196, 143, 112, 173, 183, 120, 121, 163, 150, 131, 134, 131, 175, 111, 137, 73], "Zona 4": [158, 142, 185, 159, 112, 193, 100, 143, 191, 166, 185, 147, 143, 141, 153, 152, 130, 127, 126, 128, 130, 131, 146, 139, 172, 78], "Zona 5": [198, 241, 243, 210, 261, 281, 132, 264, 274, 237, 197, 251, 136, 224, 194, 222, 203, 201, 256, 199, 184, 176, 240, 159, 247, 109], "Zona 6": [76, 93, 106, 83, 112, 115, 43, 80, 81, 106, 162, 83, 83, 86, 97, 90, 70, 74, 101, 77, 80, 70, 84, 78, 92, 31]}, "ult3": ["Abr", "May", "Jun"], "dias": {"Ene": 21, "Feb": 18, "Mar": 21, "Abr": 20, "May": 19, "Jun": 21}, "totales_mes": {"Ene": 4235, "Feb": 3796, "Mar": 4719, "Abr": 3866, "May": 3366, "Jun": 3931}};
+
+const ZONA_COLORS = ['#1B4F8A','#2E86AB','#A23B72','#F18F01','#CC0000','#3A7D44'];
+const MOD_COLORS  = ['#CC0000','#2E86AB','#3A7D44','#F18F01','#1B4F8A','#A23B72','#888','#555'];
+
+let zonaMet = 'und', dealerMet = 'und', modMet = 'und';
+let chartInstances = {};
+
+function fmt(v, met) {
+  if (met==='pct') return v.toFixed(1)+'%';
+  if (met==='prom') return v.toFixed(1);
+  return v.toLocaleString('es-AR');
+}
+function varPill(v) {
+  if (v===0) return '';
+  const cls = v>0?'up':'dn', sign = v>0?'+':'';
+  return `<span class="pill ${cls}">${sign}${v.toFixed(1)}%</span>`;
+}
+
+// ── TABS: handled by full showTab definition at bottom ──────────────────────
+
+// ── KPIs ─────────────────────────────────────────────────────────────────────
+function renderKPIs() {
+  const el = document.getElementById('kpi-row');
+  el.innerHTML = D.kpis.map((k,i) => {
+    const isLast = i===D.kpis.length-1;
+    const varHTML = k.var===0 ? '' : `<div class="kpi-var ${k.var>0?'up':'down'}">${k.var>0?'▲':'▼'} ${Math.abs(k.var).toFixed(1)}% vs mes ant.</div>`;
+    return `<div class="kpi ${isLast?'active-month':''}">
+      <div class="kpi-label">${k.mes}</div>
+      <div class="kpi-val">${k.und.toLocaleString('es-AR')}</div>
+      <div class="kpi-sub">${k.prom} u/día</div>
+      ${varHTML}
+    </div>`;
+  }).join('');
+}
+
+// ── CHART HELPERS ─────────────────────────────────────────────────────────────
+function destroyChart(id) {
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+}
+function mkChart(id, cfg) {
+  destroyChart(id);
+  chartInstances[id] = new Chart(document.getElementById(id), cfg);
+}
+
+const baseOpts = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { labels: { font:{size:11}, boxWidth:12 } } },
+  scales: {
+    x: { grid:{color:'#F0F0F0'}, ticks:{font:{size:10}} },
+    y: { grid:{color:'#F0F0F0'}, ticks:{font:{size:10}} }
+  }
+};
+
+// ── RESUMEN CHARTS ────────────────────────────────────────────────────────────
+function renderResumen() {
+  // Barras mes total
+  mkChart('chart-mes', {
+    type:'bar',
+    data:{ labels:D.meses, datasets:[{
+      label:'Unidades', data:D.ventas_mes,
+      backgroundColor: D.meses.map((_,i)=>i===D.meses.length-1?'#CC0000':'#D0D0D0'),
+      borderRadius:2
+    }]},
+    options:{...baseOpts, plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>`${c.parsed.y.toLocaleString('es-AR')} und`}}}}
+  });
+
+  // Grouped bar últimos 3 meses por zona (prom/día)
+  mkChart('chart-zona-ult3', {
+    type:'bar',
+    data:{
+      labels:D.ult3,
+      datasets:D.zonas.map((z,i)=>({
+        label:z, backgroundColor:ZONA_COLORS[i],
+        data:D.ult3.map(m=>D.zona_mes[z][m].prom), borderRadius:1
+      }))
+    },
+    options:{...baseOpts}
+  });
+
+  // Donut mix modelos Jun
+  const top6 = D.modelos_list.slice(0,6);
+  mkChart('chart-mix-jun', {
+    type:'doughnut',
+    data:{
+      labels:top6,
+      datasets:[{data:top6.map(m=>D.modelos[m]['Jun'].und), backgroundColor:MOD_COLORS, borderWidth:2}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12}}}}
+  });
+
+  // Line tendencia prom/día top5 modelos
+  const top5 = D.modelos_list.slice(0,5);
+  mkChart('chart-mod-tend', {
+    type:'line',
+    data:{
+      labels:D.meses,
+      datasets:top5.map((m,i)=>({
+        label:m, borderColor:MOD_COLORS[i], backgroundColor:'transparent',
+        data:D.meses.map(mes=>D.modelos[m][mes].prom),
+        tension:.3, borderWidth:2, pointRadius:3
+      }))
+    },
+    options:{...baseOpts}
+  });
+}
+
+// ── ZONAS ─────────────────────────────────────────────────────────────────────
+function setZonaMet(m, btn) {
+  zonaMet=m;
+  document.querySelectorAll('#zonas .btn-group button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderZonasTable();
+}
+
+function renderZonas() {
+  // Línea evolución prom/día
+  mkChart('chart-zona-evol', {
+    type:'line',
+    data:{
+      labels:D.meses,
+      datasets:D.zonas.map((z,i)=>({
+        label:z, borderColor:ZONA_COLORS[i], backgroundColor:'transparent',
+        data:D.meses.map(m=>D.zona_mes[z][m].prom),
+        tension:.3, borderWidth:2, pointRadius:3
+      }))
+    },
+    options:{...baseOpts}
+  });
+
+  // Barras grupales últimos 3 meses comparativo
+  mkChart('chart-zona-comp', {
+    type:'bar',
+    data:{
+      labels:D.zonas,
+      datasets:D.ult3.map((m,i)=>({
+        label:m,
+        backgroundColor:['#CCCCCC','#888888','#CC0000'][i],
+        data:D.zonas.map(z=>D.zona_mes[z][m].prom), borderRadius:2
+      }))
+    },
+    options:{...baseOpts, plugins:{legend:{labels:{font:{size:11},boxWidth:12}}}}
+  });
+
+  renderZonasTable();
+}
+
+function renderZonasTable() {
+  const tbl = document.getElementById('tbl-zona');
+  const met = zonaMet;
+  let html = `<thead><tr><th>Zona</th>${D.meses.map(m=>`<th>${m}</th>`).join('')}<th>Total</th><th>Var May→Jun</th></tr></thead><tbody>`;
+  for (const z of D.zonas) {
+    const vals = D.meses.map(m=>D.zona_mes[z][m][met]);
+    const total = met==='und' ? vals.reduce((a,b)=>a+b,0) : (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+    const v5=D.zona_mes[z]['May'][met], v6=D.zona_mes[z]['Jun'][met];
+    const varV = met==='und' ? ((v6-v5)/v5*100).toFixed(1) : ((v6-v5)/v5*100).toFixed(1);
+    html += `<tr><td><span class="dot" style="background:${ZONA_COLORS[D.zonas.indexOf(z)]}"></span>${z}</td>
+      ${vals.map(v=>`<td>${fmt(v,met)}</td>`).join('')}
+      <td><strong>${met==='und'?total.toLocaleString('es-AR'):total}</strong></td>
+      <td>${varPill(parseFloat(varV))}</td></tr>`;
+  }
+  // Total fila
+  const tots = D.meses.map(m=>D.zonas.reduce((s,z)=>s+D.zona_mes[z][m][met],0));
+  html += `</tbody><tfoot><tr><td>TOTAL</td>${tots.map(v=>`<td>${fmt(v,met)}</td>`).join('')}<td>${tots.reduce((a,b)=>a+b,0).toLocaleString('es-AR')}</td><td></td></tr></tfoot>`;
+  tbl.innerHTML = html;
+}
+
+// ── DEALERS ───────────────────────────────────────────────────────────────────
+function setDealerMet(m, btn) {
+  dealerMet=m;
+  document.querySelectorAll('#dealers .btn-group button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderDealers();
+}
+
+function renderDealers() {
+  const zona = document.getElementById('filt-zona').value;
+  const search = document.getElementById('filt-dealer').value.toLowerCase();
+  const met = dealerMet;
+  const tbl = document.getElementById('tbl-dealers');
+
+  let dealers = Object.entries(D.dealers)
+    .filter(([cod,d])=>(zona==='todas'||d.zona===zona) && cod.toLowerCase().includes(search))
+    .sort((a,b)=>b[1].meses['Jun'][met]-a[1].meses['Jun'][met]);
+
+  let html = `<thead><tr><th>Dealer</th><th>Zona</th>${D.meses.map(m=>`<th>${m}</th>`).join('')}<th>Total</th><th>Var May→Jun</th></tr></thead><tbody>`;
+  for (const [cod,d] of dealers) {
+    const zi = D.zonas.indexOf(d.zona);
+    const vals = D.meses.map(m=>d.meses[m][met]);
+    const total = met==='und' ? vals.reduce((a,b)=>a+b,0) : (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+    const v5=d.meses['May'][met], v6=d.meses['Jun'][met];
+    const varV = v5>0 ? ((v6-v5)/v5*100).toFixed(1) : 0;
+    html += `<tr><td>${cod}</td>
+      <td><span class="dot" style="background:${ZONA_COLORS[zi]}"></span>${d.zona}</td>
+      ${vals.map(v=>`<td>${fmt(v,met)}</td>`).join('')}
+      <td><strong>${met==='und'?total.toLocaleString('es-AR'):total}</strong></td>
+      <td>${varPill(parseFloat(varV))}</td></tr>`;
+  }
+  html += '</tbody>';
+  tbl.innerHTML = html;
+}
+
+// ── MODELOS ───────────────────────────────────────────────────────────────────
+function setModMet(m, btn) {
+  modMet=m;
+  document.querySelectorAll('#modelos .btn-group button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderModelosTable();
+}
+
+function renderModelos() {
+  const top6 = D.modelos_list.slice(0,6);
+  mkChart('chart-mod-evol', {
+    type:'line',
+    data:{
+      labels:D.meses,
+      datasets:top6.map((m,i)=>({
+        label:m, borderColor:MOD_COLORS[i], backgroundColor:'transparent',
+        data:D.meses.map(mes=>D.modelos[m][mes].prom),
+        tension:.3, borderWidth:2, pointRadius:3
+      }))
+    },
+    options:{...baseOpts}
+  });
+
+  // Pie acumulado
+  const totAcum = D.modelos_list.slice(0,8).map(m=>D.meses.reduce((s,mes)=>s+D.modelos[m][mes].und,0));
+  mkChart('chart-mod-pie', {
+    type:'doughnut',
+    data:{labels:D.modelos_list.slice(0,8), datasets:[{data:totAcum, backgroundColor:MOD_COLORS, borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12}}}}
+  });
+
+  renderModelosTable();
+}
+
+function renderModelosTable() {
+  const met = modMet;
+  const tbl = document.getElementById('tbl-modelos');
+  let html = `<thead><tr><th>Modelo</th>${D.meses.map(m=>`<th>${m}</th>`).join('')}<th>Total</th><th>Var May→Jun</th></tr></thead><tbody>`;
+  for (const mod of D.modelos_list) {
+    if (!D.modelos[mod]) continue;
+    const vals = D.meses.map(m=>D.modelos[mod][m][met]);
+    const total = met==='und' ? vals.reduce((a,b)=>a+b,0) : (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+    const v5=D.modelos[mod]['May'][met], v6=D.modelos[mod]['Jun'][met];
+    const varV = v5>0 ? ((v6-v5)/v5*100).toFixed(1) : 0;
+    html += `<tr><td>${mod}</td>${vals.map(v=>`<td>${fmt(v,met)}</td>`).join('')}
+      <td><strong>${met==='und'?total.toLocaleString('es-AR'):total}</strong></td>
+      <td>${varPill(parseFloat(varV))}</td></tr>`;
+  }
+  html += '</tbody>';
+  tbl.innerHTML = html;
+}
+
+// ── TENDENCIA ─────────────────────────────────────────────────────────────────
+function renderTendencia() {
+  const sel = document.getElementById('filt-tend').value;
+  const sems = D.semanas;
+
+  destroyChart('chart-tend');
+
+  let datasets = [];
+  if (sel==='total') {
+    datasets = [{label:'Total país', borderColor:'#CC0000', backgroundColor:'rgba(204,0,0,0.08)',
+      data:D.semanas_total, fill:true, tension:.3, borderWidth:2, pointRadius:2}];
+    document.getElementById('tend-title').textContent = 'Unidades por semana — Total país';
+  } else if (sel==='todas-zonas') {
+    datasets = D.zonas.map((z,i)=>({
+      label:z, borderColor:ZONA_COLORS[i], backgroundColor:'transparent',
+      data:D.semanas_zona[z], tension:.3, borderWidth:1.5, pointRadius:2
+    }));
+    document.getElementById('tend-title').textContent = 'Unidades por semana — Todas las zonas';
+  } else {
+    datasets = [{label:sel, borderColor:ZONA_COLORS[D.zonas.indexOf(sel)], backgroundColor:'rgba(0,0,0,0.04)',
+      data:D.semanas_zona[sel], fill:true, tension:.3, borderWidth:2, pointRadius:2}];
+    document.getElementById('tend-title').textContent = `Unidades por semana — ${sel}`;
+  }
+
+  mkChart('chart-tend', {type:'line', data:{labels:sems, datasets},
+    options:{...baseOpts,scales:{
+      x:{grid:{color:'#F0F0F0'},ticks:{font:{size:9},maxRotation:45}},
+      y:{grid:{color:'#F0F0F0'},ticks:{font:{size:10}}}
+    }}});
+
+  // Tabla semanas por zona
+  const tbl = document.getElementById('tbl-tend');
+  let html = `<thead><tr><th>Semana</th>${D.zonas.map(z=>`<th>${z}</th>`).join('')}<th>Total</th></tr></thead><tbody>`;
+  sems.forEach((s,i)=>{
+    const tot = D.semanas_total[i];
+    html += `<tr><td><strong>${s}</strong></td>${D.zonas.map(z=>`<td>${D.semanas_zona[z][i]||0}</td>`).join('')}<td><strong>${tot}</strong></td></tr>`;
+  });
+  html += '</tbody>';
+  tbl.innerHTML = html;
+}
+
+// ── REGION DATA ───────────────────────────────────────────────────────────────
+const RD = {"region_mes": {"AMBA": {"Ene": {"und": 1382, "prom": 65.8, "pct": 32.6}, "Feb": {"und": 1248, "prom": 69.3, "pct": 32.9}, "Mar": {"und": 1587, "prom": 75.6, "pct": 33.6}, "Abr": {"und": 1175, "prom": 58.8, "pct": 30.4}, "May": {"und": 1080, "prom": 56.8, "pct": 32.1}, "Jun": {"und": 1189, "prom": 56.6, "pct": 30.2}}, "BUENOS AIRES": {"Ene": {"und": 386, "prom": 18.4, "pct": 9.1}, "Feb": {"und": 325, "prom": 18.1, "pct": 8.6}, "Mar": {"und": 462, "prom": 22.0, "pct": 9.8}, "Abr": {"und": 376, "prom": 18.8, "pct": 9.7}, "May": {"und": 314, "prom": 16.5, "pct": 9.3}, "Jun": {"und": 405, "prom": 19.3, "pct": 10.3}}, "LITORAL": {"Ene": {"und": 561, "prom": 26.7, "pct": 13.2}, "Feb": {"und": 585, "prom": 32.5, "pct": 15.4}, "Mar": {"und": 650, "prom": 31.0, "pct": 13.8}, "Abr": {"und": 594, "prom": 29.7, "pct": 15.4}, "May": {"und": 472, "prom": 24.8, "pct": 14.0}, "Jun": {"und": 589, "prom": 28.0, "pct": 15.0}}, "CENTRO": {"Ene": {"und": 447, "prom": 21.3, "pct": 10.6}, "Feb": {"und": 388, "prom": 21.6, "pct": 10.2}, "Mar": {"und": 481, "prom": 22.9, "pct": 10.2}, "Abr": {"und": 378, "prom": 18.9, "pct": 9.8}, "May": {"und": 327, "prom": 17.2, "pct": 9.7}, "Jun": {"und": 443, "prom": 21.1, "pct": 11.3}}, "NEA": {"Ene": {"und": 344, "prom": 16.4, "pct": 8.1}, "Feb": {"und": 262, "prom": 14.6, "pct": 6.9}, "Mar": {"und": 364, "prom": 17.3, "pct": 7.7}, "Abr": {"und": 234, "prom": 11.7, "pct": 6.1}, "May": {"und": 241, "prom": 12.7, "pct": 7.2}, "Jun": {"und": 301, "prom": 14.3, "pct": 7.7}}, "NOA": {"Ene": {"und": 348, "prom": 16.6, "pct": 8.2}, "Feb": {"und": 222, "prom": 12.3, "pct": 5.8}, "Mar": {"und": 309, "prom": 14.7, "pct": 6.5}, "Abr": {"und": 324, "prom": 16.2, "pct": 8.4}, "May": {"und": 235, "prom": 12.4, "pct": 7.0}, "Jun": {"und": 281, "prom": 13.4, "pct": 7.1}}, "CUYO": {"Ene": {"und": 237, "prom": 11.3, "pct": 5.6}, "Feb": {"und": 177, "prom": 9.8, "pct": 4.7}, "Mar": {"und": 241, "prom": 11.5, "pct": 5.1}, "Abr": {"und": 209, "prom": 10.4, "pct": 5.4}, "May": {"und": 150, "prom": 7.9, "pct": 4.5}, "Jun": {"und": 202, "prom": 9.6, "pct": 5.1}}, "SUR": {"Ene": {"und": 530, "prom": 25.2, "pct": 12.5}, "Feb": {"und": 589, "prom": 32.7, "pct": 15.5}, "Mar": {"und": 625, "prom": 29.8, "pct": 13.2}, "Abr": {"und": 576, "prom": 28.8, "pct": 14.9}, "May": {"und": 547, "prom": 28.8, "pct": 16.3}, "Jun": {"und": 521, "prom": 24.8, "pct": 13.3}}}, "regions": ["AMBA", "BUENOS AIRES", "LITORAL", "CENTRO", "NEA", "NOA", "CUYO", "SUR"], "dealers_region": {"ADS": "SUR", "AGO": "BUENOS AIRES", "ALM": "CENTRO", "AMN": "LITORAL", "ANZ": "CUYO", "ASI": "AMBA", "ATN": "AMBA", "BHA": "CENTRO", "BOS": "NOA", "CAM": "BUENOS AIRES", "CEC": "AMBA", "CEL": "SUR", "CEM": "CENTRO", "DEC": "NEA", "DPQ": "NOA", "DYV": "NEA", "FED": "AMBA", "FEP": "AMBA", "GIN": "LITORAL", "GON": "CUYO", "HAI": "LITORAL", "HOM": "NEA", "KAI": "AMBA", "LUP": "NOA", "LUX": "NOA", "MEN": "LITORAL", "MIL": "CENTRO", "MOV": "AMBA", "NIC": "SUR", "NUA": "AMBA", "OLV": "AMBA", "PIC": "BUENOS AIRES", "PRN": "AMBA", "RIC": "BUENOS AIRES", "SAA": "AMBA", "SAK": "LITORAL", "SEN": "NOA", "TMS": "NEA", "TRI": "AMBA", "TSU": "SUR", "TTC": "AMBA", "UZC": "BUENOS AIRES", "YAC": "CUYO", "ZEN": "AMBA"}};
+
+const REG_COLORS = ['#CC0000','#2E86AB','#3A7D44','#F18F01','#843C0C','#C55A11','#4527A0','#444444'];
+
+let regMet = 'und';
+
+function setRegMet(m, btn) {
+  regMet = m;
+  document.querySelectorAll('#regiones .btn-group button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRegionTable();
+}
+
+function renderRegiones() {
+  const regs = RD.regions;
+
+  // Línea evolución prom/día
+  mkChart('chart-reg-evol', {
+    type:'line',
+    data:{
+      labels: D.meses,
+      datasets: regs.map((r,i)=>({
+        label: r, borderColor: REG_COLORS[i], backgroundColor:'transparent',
+        data: D.meses.map(m=>RD.region_mes[r][m].prom),
+        tension:.3, borderWidth:2, pointRadius:3
+      }))
+    },
+    options:{...baseOpts}
+  });
+
+  // Barras agrupadas ult3 comparativo
+  mkChart('chart-reg-comp', {
+    type:'bar',
+    data:{
+      labels: regs,
+      datasets: D.ult3.map((m,i)=>({
+        label: m,
+        backgroundColor: ['#CCCCCC','#888888','#CC0000'][i],
+        data: regs.map(r=>RD.region_mes[r][m].prom), borderRadius:2
+      }))
+    },
+    options:{...baseOpts}
+  });
+
+  renderRegionTable();
+  renderRegDealers();
+}
+
+function renderRegionTable() {
+  const tbl = document.getElementById('tbl-region');
+  const met = regMet;
+  const regs = RD.regions;
+  let html = `<thead><tr><th>Región</th>${D.meses.map(m=>`<th>${m}</th>`).join('')}<th>Total</th><th>Var May→Jun</th></tr></thead><tbody>`;
+  for (let i=0; i<regs.length; i++) {
+    const r = regs[i];
+    const vals = D.meses.map(m=>RD.region_mes[r][m][met]);
+    const total = met==='und' ? vals.reduce((a,b)=>a+b,0).toLocaleString('es-AR')
+                              : (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+    const v5=RD.region_mes[r]['May'][met], v6=RD.region_mes[r]['Jun'][met];
+    const varV = v5>0 ? ((v6-v5)/v5*100).toFixed(1) : 0;
+    html += `<tr>
+      <td><span class="dot" style="background:${REG_COLORS[i]}"></span>${r}</td>
+      ${vals.map(v=>`<td>${fmt(v,met)}</td>`).join('')}
+      <td><strong>${total}</strong></td>
+      <td>${varPill(parseFloat(varV))}</td>
+    </tr>`;
+  }
+  // Total fila
+  const tots = D.meses.map(m=>regs.reduce((s,r)=>s+RD.region_mes[r][m][met],0));
+  html += `</tbody><tfoot><tr><td>TOTAL</td>${tots.map(v=>`<td>${fmt(v,met)}</td>`).join('')}<td>${tots.reduce((a,b)=>a+b,0).toLocaleString('es-AR')}</td><td></td></tr></tfoot>`;
+  tbl.innerHTML = html;
+}
+
+function renderRegDealers() {
+  const filtReg = document.getElementById('filt-reg').value;
+  const tbl = document.getElementById('tbl-reg-dealers');
+
+  let dealers = Object.entries(D.dealers)
+    .filter(([cod,d])=> filtReg==='todas' || RD.dealers_region[cod]===filtReg)
+    .sort((a,b)=>b[1].meses['Jun']['und']-a[1].meses['Jun']['und']);
+
+  let html = `<thead><tr><th>Dealer</th><th>Región</th>${D.meses.map(m=>`<th>${m}</th>`).join('')}<th>Total</th><th>Var May→Jun</th></tr></thead><tbody>`;
+  for (const [cod,d] of dealers) {
+    const reg = RD.dealers_region[cod] || '—';
+    const ri = RD.regions.indexOf(reg);
+    const vals = D.meses.map(m=>d.meses[m]['und']);
+    const total = vals.reduce((a,b)=>a+b,0);
+    const v5=d.meses['May']['und'], v6=d.meses['Jun']['und'];
+    const varV = v5>0 ? ((v6-v5)/v5*100).toFixed(1) : 0;
+    html += `<tr>
+      <td>${cod}</td>
+      <td><span class="dot" style="background:${REG_COLORS[ri]||'#999'}"></span>${reg}</td>
+      ${vals.map(v=>`<td>${v||0}</td>`).join('')}
+      <td><strong>${total.toLocaleString('es-AR')}</strong></td>
+      <td>${varPill(parseFloat(varV))}</td>
+    </tr>`;
+  }
+  html += '</tbody>';
+  tbl.innerHTML = html;
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+renderKPIs();
+renderResumen();
+
+function showTab(id) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  if (id==='zonas') renderZonas();
+  if (id==='dealers') renderDealers();
+  if (id==='modelos') renderModelos();
+  if (id==='tendencia') renderTendencia();
+  if (id==='regiones') renderRegiones();
+}
+</script>
+</body>
+</html>
